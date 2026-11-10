@@ -72,9 +72,7 @@ def main():
         wait_streamlit(v, 20)
 
         def st_fill(label: str, value: str):
-            cont = v.locator(f"div[data-testid='stTextInput']:has(> div > label:text-is('{label}'))").first
-            cont.locator("input").click()
-            cont.locator("input").fill(value)
+            v.get_by_role("textbox", name=label, exact=True).fill(value)
 
         st_fill("Название бренда", "Фитнес-студия «Пульс»")
         st_fill("Ниша", "фитнес и здоровый образ жизни")
@@ -120,15 +118,16 @@ def main():
         wait_streamlit(v, 30)
         v.screenshot(path=CAST / "step6_ab_result.png", full_page=True)
 
+        video = v.video
         ctx.close()
         browser.close()
 
-        # Переименовываем видео в понятное имя
-        vids = sorted(CAST.glob("**/webm/video.webm")) or sorted(CAST.rglob("*.webm"))
-        if vids:
-            vids[0].rename(OUT / "screencast.webm")
-            print("🎬 Скринкаст:", OUT / "screencast.webm")
-    print("📸 Готово. См. docs/screenshots и docs/screencast")
+        if video is None:
+            raise RuntimeError("Playwright не создал запись скринкаста")
+        video_path = Path(video.path())
+        video_path.replace(OUT / "screencast.webm")
+        print("Screencast:", OUT / "screencast.webm")
+    print("Done. See docs/screenshots and docs/screencast")
 
 
 if __name__ == "__main__":
