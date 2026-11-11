@@ -24,6 +24,19 @@ def _mask_token(token: str) -> str:
     return token[:4] + "…" + token[-4:]
 
 
+def _safe_error(error: Exception) -> str:
+    message = str(error)
+    secrets = (
+        settings.TELEGRAM_BOT_TOKEN, settings.VK_ACCESS_TOKEN,
+        settings.IG_ACCESS_TOKEN, settings.WP_APP_PASSWORD,
+        settings.MAILCHIMP_API_KEY,
+    )
+    for secret in secrets:
+        if secret:
+            message = message.replace(secret, "[REDACTED]")
+    return f"{type(error).__name__}: {message[:500]}"
+
+
 class BaseAdapter:
     channel: Channel
 
@@ -44,6 +57,18 @@ class BaseAdapter:
 
     def live_token(self) -> str:
         raise NotImplementedError
+
+    def require_account(self) -> SocialAccount:
+        account = self.account()
+        if not account:
+            raise ValueError(f"Не настроено назначение канала {self.channel.value}")
+        return account
+
+    def require_token(self) -> str:
+        token = self.live_token()
+        if not token:
+            raise ValueError(f"Не задан токен для канала {self.channel.value}")
+        return token
 
     async def publish_live(self, content: Content) -> dict:
         raise NotImplementedError
@@ -66,7 +91,7 @@ class BaseAdapter:
             pub.published_at = datetime.utcnow()
         except Exception as e:  # noqa: BLE001
             pub.status = "error"
-            pub.error = f"{type(e).__name__}: {e}"
+            pub.error = _safe_error(e)
         self.db.add(pub)
         self.db.commit()
         self.db.refresh(pub)
@@ -80,16 +105,17 @@ class TelegramAdapter(BaseAdapter):
         return settings.TELEGRAM_BOT_TOKEN
 
     async def publish_live(self, content: Content) -> dict:
-        token = self.live_token()
-        acc = self.account()
-        chat_id = acc.username if acc else ""
+        token = self.require_token()
+        chat_id = self.require_account().username
+        if not chat_id:
+            raise ValueError("Для Telegram в поле username укажите chat_id или @username")
         url = f"https://api.telegram.org/bot{token}/sendMessage"
         async with httpx.AsyncClient(timeout=15) as client:
-            r = await client.post(url, json={
-                "chat_id": chat_id, "text": content.body, "parse_mode": "Markdown",
-            })
+            r = await client.post(url, json={"chat_id": chat_id, "text": content.body})
             r.raise_for_status()
             data = r.json()
+            if not data.get("ok"):
+                raise RuntimeError(data.get("description", "Telegram API returned an error"))
             return {"id": data["result"]["message_id"]}
 
 
@@ -100,13 +126,16 @@ class VKAdapter(BaseAdapter):
         return settings.VK_ACCESS_TOKEN
 
     async def publish_live(self, content: Content) -> dict:
-        token = self.live_token()
-        url = "https://api.vk.com/method/pages.add"  # упрощённо; для стены — wall.post
+        token = self.require_token()
+        community_id = self.require_account().username.lstrip("-")
+        if not community_id.isdigit():
+            raise ValueError("Для VK в поле username укажите числовой ID сообщества")
+        url = "https://api.vk.com/method/wall.post"
         async with httpx.AsyncClient(timeout=15) as client:
             r = await client.post(url, data={
                 "access_token": token, "v": "5.199",
-                "group_id": (self.account().username or "").lstrip("-"),
-                "text": content.body,
+                "owner_id": f"-{community_id}", "from_group": 1,
+                "message": content.body,
             })
             r.raise_for_status()
             data = r.json()
@@ -123,12 +152,17 @@ class InstagramAdapter(BaseAdapter):
 
     async def publish_live(self, content: Content) -> dict:
         # Instagram Graph API: сначала media container, потом publish.
-        token = self.live_token()
-        ig_user = (self.account().username if self.account() else "") or settings.IG_ACCESS_TOKEN and "me"
+        token = self.require_token()
+        ig_user = self.require_account().username
+        if not ig_user:
+            raise ValueError("Для Instagram в поле username укажите ID профессионального аккаунта")
+        media_url = (content.meta or {}).get("media_url")
+        if not media_url:
+            raise ValueError("Для Instagram требуется публичный URL изображения в content.meta.media_url")
         base = "https://graph.facebook.com/v21.0"
         async with httpx.AsyncClient(timeout=20) as client:
             r1 = await client.post(f"{base}/{ig_user}/media", data={
-                "caption": content.body[:2200], "access_token": token,
+                "image_url": media_url, "caption": content.body[:2200], "access_token": token,
             })
             r1.raise_for_status()
             creation_id = r1.json()["id"]
@@ -146,6 +180,10 @@ class WordPressAdapter(BaseAdapter):
         return settings.WP_APP_PASSWORD
 
     async def publish_live(self, content: Content) -> dict:
+        self.require_token()
+        self.require_account()
+        if not settings.WP_URL or not settings.WP_USER:
+            raise ValueError("Для WordPress задайте WP_URL и WP_USER")
         url = f"{settings.WP_URL.rstrip('/')}/wp-json/wp/v2/posts"
         html = "<p>" + content.body.replace("\n\n", "</p><p>") + "</p>"
         async with httpx.AsyncClient(timeout=30) as client:
@@ -164,6 +202,11 @@ class MailchimpAdapter(BaseAdapter):
         return settings.MAILCHIMP_API_KEY
 
     async def publish_live(self, content: Content) -> dict:
+        self.require_token()
+        self.require_account()
+        if (not settings.MAILCHIMP_SERVER or not settings.MAILCHIMP_AUDIENCE_ID
+                or not settings.MAILCHIMP_REPLY_TO):
+            raise ValueError("Для Mailchimp задайте MAILCHIMP_SERVER, MAILCHIMP_AUDIENCE_ID и MAILCHIMP_REPLY_TO")
         base = f"https://{settings.MAILCHIMP_SERVER}.api.mailchimp.com/3.0"
         headers = {"Authorization": f"Bearer {settings.MAILCHIMP_API_KEY}"}
         body_html = "<p>" + content.body.replace("\n\n", "</p><p>") + "</p>"
@@ -172,13 +215,15 @@ class MailchimpAdapter(BaseAdapter):
                 "type": "regular",
                 "recipients": {"list_id": settings.MAILCHIMP_AUDIENCE_ID},
                 "settings": {"subject_line": content.title, "from_name": "AI Platform",
-                             "reply_to": "noreply@example.com"},
-                "type_uses": {"template": {"id": "1", "html": body_html}},
+                             "reply_to": settings.MAILCHIMP_REPLY_TO},
             })
             r1.raise_for_status()
             cid = r1.json()["id"]
-            r2 = await client.post(f"{base}/campaigns/{cid}/actions/send", headers=headers)
+            r2 = await client.put(f"{base}/campaigns/{cid}/content", headers=headers,
+                                  json={"html": body_html})
             r2.raise_for_status()
+            r3 = await client.post(f"{base}/campaigns/{cid}/actions/send", headers=headers)
+            r3.raise_for_status()
             return {"id": cid}
 
 

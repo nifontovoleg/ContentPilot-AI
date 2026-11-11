@@ -32,6 +32,7 @@ class Settings(BaseSettings):
     MAILCHIMP_API_KEY: str = ""
     MAILCHIMP_SERVER: str = ""  # напр. us21
     MAILCHIMP_AUDIENCE_ID: str = ""
+    MAILCHIMP_REPLY_TO: str = ""
 
     # Режим публикации: demo (имитация) | live (реальные API)
     POSTING_MODE: str = "demo"

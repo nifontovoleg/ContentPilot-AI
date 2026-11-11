@@ -114,8 +114,18 @@ with tab_create:
             "Элемент плана", pdf["id"].tolist(),
             format_func=lambda i: f"#{i} · {pdf[pdf.id == i]['topic'].iloc[0][:70]}"
         )
+        selected_plan = next((p for p in plans_all if p["id"] == int(sel)), None)
+        media_url = None
+        if selected_plan and selected_plan["channel"] == "instagram":
+            media_url = st.text_input(
+                "Публичный HTTPS URL изображения для Instagram",
+                key=f"instagram_media_{int(sel)}",
+            )
         if st.button("🤖 Сгенерировать варианты A и B"):
-            res = api("POST", "/api/content/generate", json={"plan_id": int(sel), "variants": 2})
+            payload = {"plan_id": int(sel), "variants": 2}
+            if media_url:
+                payload["media_url"] = media_url
+            res = api("POST", "/api/content/generate", json=payload)
             if res:
                 for c in res:
                     with st.expander(f"Вариант {c['variant_tag']} · {c['model_used']}"):
@@ -127,9 +137,15 @@ with tab_create:
         bch = st.selectbox("Канал", ["telegram", "vk", "instagram", "wordpress", "mailchimp"])
         btype = st.selectbox("Тип", ["post", "article", "email"])
         btopic = st.text_input("Тема", "Как выбрать зерно для гейши")
+        media_url = None
+        if bch == "instagram":
+            media_url = st.text_input("Публичный HTTPS URL изображения для Instagram")
         if st.form_submit_button("Сгенерировать"):
-            res = api("POST", "/api/content/brief", json={
-                "project_id": int(bpid), "channel": bch, "content_type": btype, "topic": btopic})
+            payload = {"project_id": int(bpid), "channel": bch,
+                       "content_type": btype, "topic": btopic}
+            if media_url:
+                payload["media_url"] = media_url
+            res = api("POST", "/api/content/brief", json=payload)
             if res:
                 st.markdown(f"**{res['title']}**\n\n{res['body']}")
 
@@ -162,6 +178,8 @@ with tab_posting:
 # ---------------- Аналитика ----------------
 with tab_analytics:
     st.subheader("📊 Аналитика эффективности")
+    if health and health["posting_mode"] == "demo":
+        st.info("Демо-режим: показатели ниже симулируются и не получены от каналов.")
     if st.button("🔄 Синхронизировать метрики со всех каналов"):
         api("POST", "/api/analytics/sync-metrics")
     dash = api("GET", "/api/analytics/dashboard") or []

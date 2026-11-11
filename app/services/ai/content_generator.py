@@ -76,7 +76,7 @@ async def _openai_body(plan: ContentPlan, project: Project, variant: str) -> str
 
 
 async def generate_content(db: Session, plan: ContentPlan, project: Project,
-                           variants: int = 2) -> list[Content]:
+                           variants: int = 2, media_url: str | None = None) -> list[Content]:
     """Создаёт варианты A/B текста для элемента плана и сохраняет в БД."""
     use_openai = bool(settings.OPENAI_API_KEY)
     created: list[Content] = []
@@ -95,9 +95,12 @@ async def generate_content(db: Session, plan: ContentPlan, project: Project,
             body = _local_body(plan, project, tag)
             model = "local-rule-based (fallback)"
 
+        metadata = {"channel": plan.channel.value, "type": plan.content_type.value}
+        if media_url:
+            metadata["media_url"] = media_url
         c = Content(plan_id=plan.id, title=plan.headline or plan.topic,
                     body=body, variant_tag=tag, model_used=model,
-                    meta={"channel": plan.channel.value, "type": plan.content_type.value})
+                    meta=metadata)
         db.add(c)
         created.append(c)
 

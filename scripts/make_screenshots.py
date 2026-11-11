@@ -5,11 +5,15 @@
 Результат: docs/screenshots/*.png, docs/screencast/*.png, docs/screencast.webm
 """
 import time
+from datetime import date
 from pathlib import Path
 
+import requests
 from playwright.sync_api import sync_playwright
 
 BASE = "http://localhost:8501"
+API = "http://localhost:8000"
+DEMO_IMAGE_URL = "https://placehold.co/1080x1080.jpg"
 OUT = Path(__file__).resolve().parents[1] / "docs"
 SHOTS = OUT / "screenshots"
 CAST = OUT / "screencast"
@@ -22,7 +26,61 @@ def wait_streamlit(page, timeout=40):
     time.sleep(2.5)
 
 
+def seed_demo_workflow():
+    """Populate a demo project so screenshots show actual feature output."""
+    health = requests.get(f"{API}/health", timeout=15)
+    health.raise_for_status()
+    if health.json().get("posting_mode") != "demo":
+        raise RuntimeError("Съёмка создаёт демо-записи; задайте POSTING_MODE=demo")
+
+    project = requests.post(f"{API}/api/projects", json={
+        "name": "ContentPilot — демо для скриншотов",
+        "niche": "контент-маркетинг",
+        "target_audience": "маркетологи и контент-менеджеры",
+        "tone_of_voice": "expert",
+    }, timeout=30)
+    project.raise_for_status()
+    project_id = project.json()["id"]
+
+    plans = requests.post(f"{API}/api/plans/generate", json={
+        "project_id": project_id,
+        "month": date.today().strftime("%Y-%m"),
+        "channels": ["instagram"],
+        "posts_per_week": 1,
+    }, timeout=60)
+    plans.raise_for_status()
+    instagram_plan = next((p for p in plans.json() if p["channel"] == "instagram"), None)
+    if not instagram_plan:
+        raise RuntimeError("Не удалось создать Instagram-план для демо-съёмки")
+
+    content = requests.post(f"{API}/api/content/generate", json={
+        "plan_id": instagram_plan["id"],
+        "variants": 2,
+        "media_url": DEMO_IMAGE_URL,
+    }, timeout=60)
+    content.raise_for_status()
+    variants = content.json()
+    if len(variants) != 2:
+        raise RuntimeError("Для демо-съёмки ожидались варианты A и B")
+
+    for item in variants:
+        response = requests.post(f"{API}/api/publish", json={"content_id": item["id"]}, timeout=60)
+        response.raise_for_status()
+    requests.post(f"{API}/api/analytics/sync-metrics", timeout=60).raise_for_status()
+    test = requests.post(f"{API}/api/ab-tests", json={
+        "project_id": project_id,
+        "name": "Демо: сравнение вариантов A/B",
+        "hypothesis": "Вариант B повысит вовлечённость.",
+        "content_a_id": variants[0]["id"],
+        "content_b_id": variants[1]["id"],
+        "metric": "engagement",
+    }, timeout=30)
+    test.raise_for_status()
+    requests.post(f"{API}/api/ab-tests/{test.json()['id']}/evaluate", timeout=60).raise_for_status()
+
+
 def main():
+    seed_demo_workflow()
     with sync_playwright() as p:
         browser = p.chromium.launch()
         # --- Скриншоты (статичные) ---
@@ -39,13 +97,21 @@ def main():
 
         page.get_by_role("tab", name="Создание контента").click()
         wait_streamlit(page, 20)
+        page.get_by_role("textbox", name="Публичный HTTPS URL изображения для Instagram",
+                         exact=True).fill(DEMO_IMAGE_URL)
+        page.get_by_role("button", name="Сгенерировать варианты A и B").click()
+        wait_streamlit(page, 30)
         page.screenshot(path=SHOTS / "03_content_generation.png", full_page=True)
 
         page.get_by_role("tab", name="Автопостинг").click()
         wait_streamlit(page, 20)
+        page.get_by_role("button", name="Опубликовать").click()
+        wait_streamlit(page, 20)
         page.screenshot(path=SHOTS / "04_autoposting.png", full_page=True)
 
         page.get_by_role("tab", name="Аналитика").click()
+        wait_streamlit(page, 20)
+        page.get_by_role("button", name="Синхронизировать метрики со всех каналов").click()
         wait_streamlit(page, 20)
         page.screenshot(path=SHOTS / "05_analytics.png", full_page=True)
 
@@ -91,6 +157,10 @@ def main():
         # 3. Генерация A/B текстов
         v.get_by_role("tab", name="Создание контента").click()
         wait_streamlit(v, 20)
+        image_input = v.get_by_role("textbox", name="Публичный HTTPS URL изображения для Instagram",
+                                    exact=True)
+        if image_input.count():
+            image_input.fill(DEMO_IMAGE_URL)
         v.get_by_role("button", name="Сгенерировать варианты A и B").click()
         wait_streamlit(v, 30)
         v.screenshot(path=CAST / "step3_ab_variants.png", full_page=True)

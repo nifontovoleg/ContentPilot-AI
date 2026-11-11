@@ -2,7 +2,7 @@
 from datetime import date, datetime
 from typing import Optional, Any
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, HttpUrl
 
 from app.models.models import Channel, ContentType, PlanStatus
 
@@ -75,6 +75,7 @@ class ContentPlanOut(ORMModel):
 class ContentGenerateRequest(BaseModel):
     plan_id: int
     variants: int = 2  # A/B
+    media_url: HttpUrl | None = None  # required for Instagram live feed posts
 
 
 class ContentOut(ORMModel):
@@ -93,6 +94,7 @@ class ContentBrief(BaseModel):
     content_type: ContentType
     topic: str
     extra_instructions: str = ""
+    media_url: HttpUrl | None = None
 
 
 # --- Publication ---

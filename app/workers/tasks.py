@@ -98,10 +98,11 @@ def run_due_posts():
                 continue
             from app.services.posting.adapters import publish_content
             best = plan.contents[0]
-            asyncio.run(publish_content(db, best, [plan.channel]))
-            plan.status = PlanStatus.published
+            pubs = asyncio.run(publish_content(db, best, [plan.channel]))
+            plan.status = (PlanStatus.published if pubs and all(p.status == "success" for p in pubs)
+                           else PlanStatus.failed)
             db.commit()
-            n += 1
+            n += int(plan.status == PlanStatus.published)
         return {"posted": n}
     finally:
         db.close()

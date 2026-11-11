@@ -40,6 +40,8 @@ The application brings the content workflow together:
 
 The codebase contains channel adapters for Telegram, VK, Instagram, WordPress, and Mailchimp. Production use requires validating each adapter against the provider's current API, permissions, and account configuration. See [Current status](#current-status) before enabling real publishing.
 
+See [channel setup and live acceptance notes](docs/INTEGRATIONS.md) for the required credentials, account prerequisites, and prototype limitations. Track remaining delivery steps in [submission readiness](docs/SUBMISSION_READINESS.md). A starter configuration is provided in `.env.example`; keep actual secrets in a local `.env` file, which must never be committed.
+
 ## Quick start
 
 ### Requirements
@@ -102,7 +104,7 @@ Settings are read from environment variables or a local `.env` file. Keep creden
 | `VK_ACCESS_TOKEN` | empty | VK API credentials. |
 | `IG_ACCESS_TOKEN` | empty | Instagram Graph API credentials. |
 | `WP_URL`, `WP_USER`, `WP_APP_PASSWORD` | empty | WordPress site and application credentials. |
-| `MAILCHIMP_API_KEY`, `MAILCHIMP_SERVER`, `MAILCHIMP_AUDIENCE_ID` | empty | Mailchimp API key, data-center prefix, and audience. |
+| `MAILCHIMP_API_KEY`, `MAILCHIMP_SERVER`, `MAILCHIMP_AUDIENCE_ID`, `MAILCHIMP_REPLY_TO` | empty | Mailchimp API key, data-center prefix, audience, and authorized reply-to address. |
 
 Never commit `.env` or production credentials. Before enabling real publishing, verify permissions and destinations using test accounts owned by you or explicitly authorized by the account owner.
 
@@ -153,7 +155,7 @@ The application runs locally and the API test suite covers project creation, pla
 | Capability | Current implementation |
 |---|---|
 | Content generation | OpenAI integration when configured; local template fallback otherwise. |
-| Publishing | The default `POSTING_MODE=demo` records a local result without contacting a channel. Live adapters exist, but their provider APIs and credentials have not been verified end to end. |
+| Publishing | The default `POSTING_MODE=demo` records a local result without contacting a channel. Live adapters exist, but their provider APIs and credentials have not been verified end to end. See [channel setup and live acceptance notes](docs/INTEGRATIONS.md). |
 | Channel credentials | The account API masks the submitted token; it does not persist that secret for later adapter use. Adapters currently read provider credentials from environment settings. |
 | Analytics | Metrics are synthesized locally; provider-backed metric collection is not implemented. |
 | A/B evaluation | Compares available metrics using a simple minimum-sample rule; it does not calculate statistical significance. |
@@ -185,11 +187,22 @@ To refresh the screenshots and recording, install Playwright's browser once:
 .\.venv\Scripts\python.exe -m playwright install chromium
 ```
 
-With the API and Streamlit workspace running, execute:
+For evidence capture, use an isolated SQLite database and demo mode in each of the three PowerShell terminals. This keeps the capture records separate from your working data and prevents any real provider calls:
+
+```powershell
+New-Item -ItemType Directory -Force .capture-temp | Out-Null
+$env:DATABASE_URL = "sqlite:///./.capture-temp/capture.db"
+$env:POSTING_MODE = "demo"
+$env:OPENAI_API_KEY = ""
+```
+
+In the first terminal, start the API; in the second, start Streamlit with the same variables set; then in the third, run:
 
 ```powershell
 .\.venv\Scripts\python.exe scripts/make_screenshots.py
 ```
+
+The capture script checks that the API is in demo mode, then adds a synthetic project, Instagram plan, A/B variants, demo publications, simulated analytics, and an A/B result before recording the UI. `.capture-temp/` is ignored by Git.
 
 ## Contributing
 

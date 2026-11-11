@@ -122,7 +122,8 @@ async def create_content(data: ContentGenerateRequest, db: Session = Depends(get
     if not plan:
         raise HTTPException(404, "План не найден")
     project = db.get(Project, plan.project_id)
-    contents = await generate_content(db, plan, project, variants=data.variants)
+    contents = await generate_content(db, plan, project, variants=data.variants,
+                                      media_url=str(data.media_url) if data.media_url else None)
     return contents
 
 
@@ -141,7 +142,8 @@ async def content_from_brief(data: ContentBrief, db: Session = Depends(get_db)):
     db.add(plan)
     db.commit()
     db.refresh(plan)
-    contents = await generate_content(db, plan, project, variants=1)
+    contents = await generate_content(db, plan, project, variants=1,
+                                      media_url=str(data.media_url) if data.media_url else None)
     return contents[0]
 
 
@@ -163,7 +165,9 @@ async def publish(data: PublishRequest, db: Session = Depends(get_db)):
     pubs = await publish_content(db, content, channels)
     if all(p.status == "success" for p in pubs):
         content.plan.status = PlanStatus.published
-        db.commit()
+    elif any(p.status == "error" for p in pubs):
+        content.plan.status = PlanStatus.failed
+    db.commit()
     return pubs
 
 
@@ -178,10 +182,11 @@ async def run_due_posts(db: Session = Depends(get_db)):
     for plan in due:
         if not plan.contents:
             continue
-        await publish_content(db, plan.contents[0], [plan.channel])
-        plan.status = PlanStatus.published
+        pubs = await publish_content(db, plan.contents[0], [plan.channel])
+        plan.status = (PlanStatus.published if pubs and all(p.status == "success" for p in pubs)
+                       else PlanStatus.failed)
         db.commit()
-        posted.append(plan.id)
+        posted.append({"plan_id": plan.id, "status": plan.status.value})
     return {"posted_plans": posted}
 
 
