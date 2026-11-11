@@ -2,7 +2,7 @@
 
 # ContentPilot AI
 
-**AI content planning and publishing workflows for multi-channel marketing teams**
+**Планирование контента и публикаций с помощью ИИ для маркетинга в разных каналах**
 
 ![Python](https://img.shields.io/badge/Python-3.10%2B-3776AB?style=flat-square&logo=python&logoColor=white)
 ![FastAPI](https://img.shields.io/badge/FastAPI-REST%20API-009688?style=flat-square&logo=fastapi&logoColor=white)
@@ -10,49 +10,49 @@
 ![SQLAlchemy](https://img.shields.io/badge/SQLAlchemy-data%20layer-D71F00?style=flat-square)
 ![Tests](https://img.shields.io/badge/tests-pytest-0A9EDC?style=flat-square&logo=pytest&logoColor=white)
 
-[Features](#features) · [Quick start](#quick-start) · [Architecture](#architecture) · [Current status](#current-status) · [Contributing](#contributing)
+[Возможности](#возможности) · [Быстрый старт](#быстрый-старт) · [Архитектура](#архитектура) · [Текущее состояние](#текущее-состояние) · [Участие в разработке](#участие-в-разработке)
 
 </div>
 
 ---
 
-ContentPilot AI is a content marketing platform for managing brand projects, planning campaigns, generating channel-ready copy, and coordinating publishing workflows. It combines a FastAPI backend, a Streamlit workspace, and a SQLAlchemy data layer with SQLite or PostgreSQL.
+ContentPilot AI — платформа для контент-маркетинга: она помогает вести проекты брендов, планировать кампании, создавать тексты для разных каналов и управлять публикациями. В проекте используются FastAPI, интерфейс на Streamlit и слой данных SQLAlchemy с поддержкой SQLite и PostgreSQL.
 
-The application brings the content workflow together:
+Платформа объединяет весь цикл работы с контентом:
 
-**Brand brief → content calendar → AI-assisted copy → review → publishing workflow → performance insights**
+**Бриф бренда → контент-план → создание текстов с помощью ИИ → проверка → публикация → анализ результатов**
 
 ![Projects workspace](docs/screenshots/01_projects.png)
 
-## Features
+## Возможности
 
-| Area | What it does |
+| Раздел | Возможности |
 |---|---|
-| Brand workspaces | Organize projects by niche, audience, website, and tone of voice. |
-| Content planning | Generate monthly ideas, dates, channels, content types, and seasonal context. |
-| AI-assisted writing | Generate copy from a content plan or a short brief using OpenAI when configured, with a local fallback. |
-| A/B variants | Create and compare two copy variants for a content-plan item. |
-| Publishing workflows | Approve planned content, request a publication, and inspect its status in the publication log. |
-| Performance overview | Aggregate channel metrics and review content results. |
-| REST API | Use the documented API for projects, accounts, plans, content, publications, analytics, and tests. |
+| Рабочие пространства брендов | Организация проектов по нише, аудитории, сайту и тону коммуникации. |
+| Планирование контента | Создание идей на месяц с датами, каналами, типами публикаций и сезонным контекстом. |
+| Создание текстов с помощью ИИ | Генерация по контент-плану или краткому брифу через OpenAI, если он настроен; предусмотрен локальный резервный режим. |
+| Варианты для A/B-тестов | Создание и сравнение двух вариантов текста для одного пункта контент-плана. |
+| Процесс публикации | Согласование контента, запуск публикации и просмотр её статуса в журнале. |
+| Аналитика результатов | Сводные показатели по каналам и оценка результатов контента. |
+| REST API | API для проектов, аккаунтов, планов, контента, публикаций, аналитики и тестов. |
 
-### Integrations
+### Интеграции
 
-The codebase contains channel adapters for Telegram, VK, Instagram, WordPress, and Mailchimp. Production use requires validating each adapter against the provider's current API, permissions, and account configuration. See [Current status](#current-status) before enabling real publishing.
+В проекте есть адаптеры для Telegram, VK, Instagram, WordPress и Mailchimp. Перед использованием в production необходимо проверить каждый адаптер с учётом актуального API провайдера, разрешений и настроек аккаунта. Прежде чем включать реальные публикации, ознакомьтесь с разделом [«Текущее состояние»](#текущее-состояние).
 
-See [channel setup and live acceptance notes](docs/INTEGRATIONS.md) for the required credentials, account prerequisites, and prototype limitations. Track remaining delivery steps in [submission readiness](docs/SUBMISSION_READINESS.md). A starter configuration is provided in `.env.example`; keep actual secrets in a local `.env` file, which must never be committed.
+Требования к учётным данным, аккаунтам и ограничения прототипа описаны в документе [«Настройка каналов и проверка реальных интеграций»](docs/INTEGRATIONS.md). Оставшиеся этапы подготовки перечислены в документе [«Готовность к сдаче»](docs/SUBMISSION_READINESS.md). Пример настроек находится в `.env.example`; реальные секреты храните только в локальном `.env` и никогда не добавляйте его в коммиты.
 
-## Quick start
+## Быстрый старт
 
-### Requirements
+### Требования
 
-- Python 3.10+
-- PostgreSQL for a shared deployment; SQLite is the local default
-- An OpenAI API key only if you want to use OpenAI for content generation
+- Python 3.10 или новее
+- PostgreSQL для общего развёртывания; по умолчанию локально используется SQLite
+- Ключ API OpenAI — только если для генерации контента нужен OpenAI
 
-### Install on Windows
+### Установка в Windows
 
-Run these commands in PowerShell from the repository root:
+Выполните эти команды в PowerShell из корневой папки репозитория:
 
 ```powershell
 python -m venv .venv
@@ -60,55 +60,55 @@ python -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -r requirements.txt
 ```
 
-### Run the application
+### Запуск приложения
 
-Start the API in the first terminal:
+В первом окне терминала запустите API:
 
 ```powershell
 .\.venv\Scripts\python.exe -m uvicorn app.main:app --reload --port 8000
 ```
 
-Start the web workspace in a second terminal:
+Во втором окне терминала запустите веб-интерфейс:
 
 ```powershell
 .\.venv\Scripts\python.exe -m streamlit run frontend/streamlit_app.py
 ```
 
-| Service | Address |
+| Сервис | Адрес |
 |---|---|
-| Content workspace | <http://localhost:8501> |
-| API documentation | <http://localhost:8000/docs> |
-| Health endpoint | <http://localhost:8000/health> |
+| Рабочее пространство контента | <http://localhost:8501> |
+| Документация API | <http://localhost:8000/docs> |
+| Проверка состояния сервиса | <http://localhost:8000/health> |
 
-### Optional: load sample workspace data
+### Необязательно: загрузить демонстрационные данные
 
 ```powershell
 .\.venv\Scripts\python.exe scripts/seed_demo.py
 ```
 
-The seed script creates a new sample project each time it runs. Use a separate database if you want a clean workspace.
+При каждом запуске скрипт создаёт новый демонстрационный проект. Чтобы начать с чистого рабочего пространства, используйте отдельную базу данных.
 
-## Configuration
+## Настройка
 
-Settings are read from environment variables or a local `.env` file. Keep credentials out of Git and logs.
+Настройки считываются из переменных окружения или локального файла `.env`. Не допускайте попадания учётных данных в Git и журналы.
 
-| Variable | Default | Purpose |
+| Переменная | Значение по умолчанию | Назначение |
 |---|---|---|
-| `DATABASE_URL` | `sqlite:///./data/content_platform.db` | SQLAlchemy database URL. PostgreSQL uses `postgresql+psycopg://...`. |
-| `POSTING_MODE` | `demo` | Selects the local no-send mode or the configured channel adapters. |
-| `OPENAI_API_KEY` | empty | Enables OpenAI-backed plan and copy generation. |
-| `OPENAI_MODEL` | `gpt-4o-mini` | OpenAI model name. |
-| `AI_FALLBACK_LOCAL` | `true` | Allows local generation if an OpenAI request fails. |
-| `API_BASE` | `http://localhost:8000` | FastAPI URL used by the Streamlit workspace. |
-| `TELEGRAM_BOT_TOKEN` | empty | Telegram bot credentials. |
-| `VK_ACCESS_TOKEN` | empty | VK API credentials. |
-| `IG_ACCESS_TOKEN` | empty | Instagram Graph API credentials. |
-| `WP_URL`, `WP_USER`, `WP_APP_PASSWORD` | empty | WordPress site and application credentials. |
-| `MAILCHIMP_API_KEY`, `MAILCHIMP_SERVER`, `MAILCHIMP_AUDIENCE_ID`, `MAILCHIMP_REPLY_TO` | empty | Mailchimp API key, data-center prefix, audience, and authorized reply-to address. |
+| `DATABASE_URL` | `sqlite:///./data/content_platform.db` | URL базы данных SQLAlchemy. Для PostgreSQL используется `postgresql+psycopg://...`. |
+| `POSTING_MODE` | `demo` | Выбор демонстрационного режима без отправки или настроенных адаптеров каналов. |
+| `OPENAI_API_KEY` | не задан | Включает генерацию планов и текстов через OpenAI. |
+| `OPENAI_MODEL` | `gpt-4o-mini` | Название модели OpenAI. |
+| `AI_FALLBACK_LOCAL` | `true` | Разрешает локальную генерацию, если запрос к OpenAI завершился ошибкой. |
+| `API_BASE` | `http://localhost:8000` | Адрес FastAPI, используемый интерфейсом Streamlit. |
+| `TELEGRAM_BOT_TOKEN` | не задан | Учётные данные бота Telegram. |
+| `VK_ACCESS_TOKEN` | не задан | Учётные данные API VK. |
+| `IG_ACCESS_TOKEN` | не задан | Учётные данные Instagram Graph API. |
+| `WP_URL`, `WP_USER`, `WP_APP_PASSWORD` | не заданы | Сайт WordPress и учётные данные приложения. |
+| `MAILCHIMP_API_KEY`, `MAILCHIMP_SERVER`, `MAILCHIMP_AUDIENCE_ID`, `MAILCHIMP_REPLY_TO` | не заданы | Ключ API Mailchimp, префикс дата-центра, аудитория и разрешённый адрес для ответов. |
 
-Never commit `.env` or production credentials. Before enabling real publishing, verify permissions and destinations using test accounts owned by you or explicitly authorized by the account owner.
+Никогда не добавляйте `.env` и production-учётные данные в коммиты. Перед включением реальных публикаций проверьте разрешения и адресатов на тестовых аккаунтах, которыми владеете вы или владелец которых явно разрешил такое использование.
 
-## Architecture
+## Архитектура
 
 ```text
 Streamlit workspace ── HTTP/JSON ──> FastAPI ──> application services
@@ -118,54 +118,54 @@ Streamlit workspace ── HTTP/JSON ──> FastAPI ──> application service
                                           └── SQLAlchemy ──> SQLite / PostgreSQL
 ```
 
-| Path | Responsibility |
+| Путь | Назначение |
 |---|---|
-| `app/main.py` | FastAPI application, health endpoint, and application scheduler. |
-| `app/api/routes/endpoints.py` | REST API routes. |
-| `app/models/` and `app/schemas/` | SQLAlchemy models and Pydantic API schemas. |
-| `app/services/ai/` | Content-plan and copy generation. |
-| `app/services/posting/` | Channel adapters and publication records. |
-| `app/services/analytics/` | Metric aggregation and A/B result calculations. |
-| `app/workers/tasks.py` | Celery tasks for deployments using a worker and broker. |
-| `frontend/streamlit_app.py` | Streamlit content workspace. |
-| `tests/` | API tests. |
+| `app/main.py` | Приложение FastAPI, проверка состояния и планировщик задач. |
+| `app/api/routes/endpoints.py` | Маршруты REST API. |
+| `app/models/` и `app/schemas/` | Модели SQLAlchemy и схемы API на Pydantic. |
+| `app/services/ai/` | Генерация контент-планов и текстов. |
+| `app/services/posting/` | Адаптеры каналов и записи о публикациях. |
+| `app/services/analytics/` | Сбор метрик и расчёт результатов A/B-тестов. |
+| `app/workers/tasks.py` | Задачи Celery для развёртываний с worker-процессом и брокером. |
+| `frontend/streamlit_app.py` | Рабочее пространство контента на Streamlit. |
+| `tests/` | Тесты API. |
 
-## API overview
+## Обзор API
 
-Interactive API reference: <http://localhost:8000/docs>
+Интерактивная документация API: <http://localhost:8000/docs>
 
-| Method | Endpoint | Purpose |
+| Метод | Endpoint | Назначение |
 |---|---|---|
-| `GET`, `POST` | `/api/projects` | List and create brand projects. |
-| `GET`, `POST` | `/api/projects/{id}/accounts` | List and connect project channels. |
-| `GET`, `POST` | `/api/plans`, `/api/plans/generate` | List or generate content plans. |
-| `PATCH` | `/api/plans/{id}/approve` | Approve a plan item. |
-| `GET`, `POST` | `/api/content`, `/api/content/generate` | List content or generate plan variants. |
-| `POST` | `/api/content/brief` | Generate content from a short brief. |
-| `POST` | `/api/publish` | Start a publication workflow. |
-| `POST` | `/api/autopost/run-due` | Process due approved items. |
-| `GET`, `POST` | `/api/analytics/*` | Synchronize and retrieve analytics. |
-| `GET`, `POST` | `/api/ab-tests` | List and create A/B tests. |
-| `POST` | `/api/ab-tests/{id}/evaluate` | Refresh metrics and evaluate an A/B test. |
+| `GET`, `POST` | `/api/projects` | Получить список проектов брендов или создать проект. |
+| `GET`, `POST` | `/api/projects/{id}/accounts` | Получить список каналов проекта или подключить канал. |
+| `GET`, `POST` | `/api/plans`, `/api/plans/generate` | Получить или сгенерировать контент-планы. |
+| `PATCH` | `/api/plans/{id}/approve` | Согласовать пункт контент-плана. |
+| `GET`, `POST` | `/api/content`, `/api/content/generate` | Получить контент или сгенерировать варианты по плану. |
+| `POST` | `/api/content/brief` | Создать контент по краткому брифу. |
+| `POST` | `/api/publish` | Запустить процесс публикации. |
+| `POST` | `/api/autopost/run-due` | Обработать наступившие по сроку согласованные публикации. |
+| `GET`, `POST` | `/api/analytics/*` | Синхронизировать и получить аналитику. |
+| `GET`, `POST` | `/api/ab-tests` | Получить список A/B-тестов или создать тест. |
+| `POST` | `/api/ab-tests/{id}/evaluate` | Обновить метрики и оценить результаты A/B-теста. |
 
-## Current status
+## Текущее состояние
 
-The application runs locally and the API test suite covers project creation, plan generation, copy generation, publishing workflow, analytics, and A/B evaluation. Provider-specific publishing and analytics still need production verification.
+Приложение запускается локально. Набор тестов API охватывает создание проектов, генерацию планов и текстов, процесс публикации, аналитику и оценку A/B-тестов. Публикацию и сбор аналитики для конкретных провайдеров ещё необходимо проверить в production.
 
-| Capability | Current implementation |
+| Возможность | Текущая реализация |
 |---|---|
-| Content generation | OpenAI integration when configured; local template fallback otherwise. |
-| Publishing | The default `POSTING_MODE=demo` records a local result without contacting a channel. Live adapters exist, but their provider APIs and credentials have not been verified end to end. See [channel setup and live acceptance notes](docs/INTEGRATIONS.md). |
-| Channel credentials | The account API masks the submitted token; it does not persist that secret for later adapter use. Adapters currently read provider credentials from environment settings. |
-| Analytics | Metrics are synthesized locally; provider-backed metric collection is not implemented. |
-| A/B evaluation | Compares available metrics using a simple minimum-sample rule; it does not calculate statistical significance. |
-| Authentication | End-user authentication, authorization, and tenant isolation are not implemented. |
+| Генерация контента | При наличии настроек используется OpenAI, иначе — локальные шаблоны. |
+| Публикация | В режиме по умолчанию (`POSTING_MODE=demo`) результат записывается локально, без обращения к каналу. Адаптеры для реальной публикации есть, но их работа с API провайдеров и учётными данными не проверена полностью. См. [настройку каналов и проверку интеграций](docs/INTEGRATIONS.md). |
+| Учётные данные каналов | API аккаунтов маскирует переданный токен, но не сохраняет его для последующего использования адаптерами. Сейчас адаптеры получают данные провайдеров из переменных окружения. |
+| Аналитика | Метрики формируются локально; сбор данных через API провайдеров не реализован. |
+| Оценка A/B-тестов | Сравнивает доступные метрики по простому правилу минимального размера выборки; статистическая значимость не рассчитывается. |
+| Аутентификация | Аутентификация конечных пользователей, авторизация и изоляция арендаторов не реализованы. |
 
-Treat these as implementation boundaries, not claims about provider certification. Before using the service with production accounts or customer data, complete provider-specific integration tests, secure secret storage, access control, and deployment hardening.
+Это ограничения текущей реализации, а не заявление о сертификации интеграций провайдерами. Перед использованием сервиса с production-аккаунтами или данными клиентов необходимо завершить интеграционные тесты для конкретных провайдеров, обеспечить безопасное хранение секретов и контроль доступа, а также усилить защиту развёртывания.
 
-## Tests
+## Тесты
 
-Install dependencies, then run the test suite against a temporary SQLite database:
+Установите зависимости и запустите тесты на временной базе SQLite:
 
 ```powershell
 $db = Join-Path $env:TEMP ("contentpilot-tests-" + [guid]::NewGuid().ToString("N") + ".db")
@@ -177,17 +177,17 @@ Remove-Item Env:DATABASE_URL
 if ($testResult -ne 0) { exit $testResult }
 ```
 
-## Screenshots and walkthrough
+## Скриншоты и демонстрация
 
-The [screenshots](docs/screenshots/01_projects.png) show the main workspace. A [full workflow recording](docs/screencast.webm) and the [technical specification](docs/Technical_Specification.docx) are also available.
+В [скриншотах](docs/screenshots/01_projects.png) показано основное рабочее пространство. Также доступны [запись полного сценария работы](docs/screencast.webm) и [техническое задание](docs/Technical_Specification.docx).
 
-To refresh the screenshots and recording, install Playwright's browser once:
+Чтобы обновить скриншоты и запись, один раз установите браузер для Playwright:
 
 ```powershell
 .\.venv\Scripts\python.exe -m playwright install chromium
 ```
 
-For evidence capture, use an isolated SQLite database and demo mode in each of the three PowerShell terminals. This keeps the capture records separate from your working data and prevents any real provider calls:
+Для записи демонстрации используйте отдельную базу SQLite и демонстрационный режим во всех трёх окнах PowerShell. Данные записи не смешаются с рабочими, а реальные запросы к провайдерам выполняться не будут:
 
 ```powershell
 New-Item -ItemType Directory -Force .capture-temp | Out-Null
@@ -196,25 +196,25 @@ $env:POSTING_MODE = "demo"
 $env:OPENAI_API_KEY = ""
 ```
 
-In the first terminal, start the API; in the second, start Streamlit with the same variables set; then in the third, run:
+В первом окне запустите API, во втором — Streamlit с теми же переменными окружения, а затем в третьем выполните:
 
 ```powershell
 .\.venv\Scripts\python.exe scripts/make_screenshots.py
 ```
 
-The capture script checks that the API is in demo mode, then adds a synthetic project, Instagram plan, A/B variants, demo publications, simulated analytics, and an A/B result before recording the UI. `.capture-temp/` is ignored by Git.
+Скрипт проверяет, что API запущен в демонстрационном режиме, затем добавляет тестовый проект, план для Instagram, варианты для A/B-теста, демонстрационные публикации и имитацию аналитики и записывает интерфейс. Папка `.capture-temp/` исключена из Git.
 
-## Contributing
+## Участие в разработке
 
-Contributions are welcome. Have an idea or found a bug? [Open an issue](https://github.com/nifontovoleg/ContentPilot-AI/issues) to discuss it, or submit a pull request with a focused change and tests. Useful contributions include provider integration tests, secure credential handling, real analytics adapters, and deployment hardening.
+Мы рады вкладу в проект. Есть идея или нашли ошибку? [Создайте issue](https://github.com/nifontovoleg/ContentPilot-AI/issues), чтобы обсудить её, или отправьте pull request с конкретным изменением и тестами. Особенно полезны интеграционные тесты провайдеров, безопасная работа с учётными данными, адаптеры сбора реальной аналитики и усиление защиты развёртывания.
 
-Before submitting a pull request:
+Перед отправкой pull request:
 
-1. Create a focused branch and describe the user impact of the change.
-2. Run `python -m pytest -q` and add or update tests for changed behavior.
-3. Never include API keys, account tokens, personal data, or `.env` files.
-4. Document configuration changes and provider-specific requirements.
+1. Создайте отдельную ветку и опишите, как изменение повлияет на пользователей.
+2. Запустите `python -m pytest -q`; добавьте или обновите тесты для изменённого поведения.
+3. Не добавляйте в коммиты ключи API, токены аккаунтов, персональные данные и файлы `.env`.
+4. Документируйте изменения настроек и требования конкретных провайдеров.
 
-The repository does not yet include a `CONTRIBUTING.md` or a license. Contribution and reuse terms should be documented before accepting external contributions or describing the project as open source.
+В репозитории пока нет файлов `CONTRIBUTING.md` и лицензии. До приёма внешних вкладов или представления проекта как открытого исходного кода необходимо определить условия участия и повторного использования.
 
-Want to help build ContentPilot AI? [Open an issue](https://github.com/nifontovoleg/ContentPilot-AI/issues) or send a focused pull request with tests.
+Хотите помочь развивать ContentPilot AI? [Создайте issue](https://github.com/nifontovoleg/ContentPilot-AI/issues) или отправьте pull request с конкретным изменением и тестами.
